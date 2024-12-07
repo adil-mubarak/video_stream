@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Streaming Platform</title>
+    <style>
+        body{
+            font-family: Arial, Helvetica, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome!</h1>
+        <video id="myVideo" controls width="600" height="400"></video>
+    </div>
+    
+    <script>
+        function fetchVideoChunk(start,end){
+            const baseUrl = "http://localhost:3333/stream"
+
+            fetch(`${baseUrl}?start=${start}&end=${end}`)
+            .then(response => response.blob())
+            .then(blob => {
+                const url = URL.createObjectURL(blob);
+                const source = document.createElement("source");
+                source.src = url;
+                source.type = "video/mp4";
+                document.getElementById("myVideo").appendChild(source);
+                source.onloadedmetadata = () => {
+                    URL.revokeObjectURL(url);
+                };
+            })
+            .catch(error => console.error(error));
+        }
+
+        function startStreaming() {
+      const video = document.getElementById("myVideo");
+      const videoSize = 1000000;
+      let currentPosition = 0;
+      const chunkSize = 100000;
+
+      function fetchNextChunk() {
+        const nextEnd = Math.min(currentPosition + chunkSize, videoSize);
+        fetchVideoChunk(currentPosition, nextEnd);
+        currentPosition = nextEnd;
+
+        if (currentPosition < videoSize) {
+          setTimeout(fetchNextChunk, 1000);
+        } else {
+          video.play();
+        }
+      }
+
+      fetchNextChunk();
+    }
+
+    startStreaming();
+    </script>
+</body>
+</html>
